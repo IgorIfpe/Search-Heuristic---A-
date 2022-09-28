@@ -1,12 +1,14 @@
 from copy import deepcopy
 import operator
+from os import stat
 
 class Puzzle:
 
+    global_g = 0
     current_min_h = None
 
     def __init__(self, data: list, expected_state: list, last_state: list = []) -> None:
-        self.g = 1
+        self.g = Puzzle.global_g
         self.h = 0
         self.f = 0
         self.data = data
@@ -32,11 +34,12 @@ class Puzzle:
         return h
 
     def calculate(self):
-        self.h = self.calculateH(self.expected_state)
-        self.g = 1
-        self.f = self.h + self.g
+        self.g = Puzzle.global_g
+        self.h = self.calculateH(self.data)
         self.measurePossibilities()
-
+        self.f = self.h + self.g
+        print(self.data)
+        
     def findSpace(self, spaceFinded, state: list) -> tuple:
         for x, line in enumerate(state):
             if spaceFinded in line:
@@ -58,23 +61,25 @@ class Puzzle:
         self.transformPosibilitesInPuzzles()
 
     def transformPosibilitesInPuzzles(self):
+        Puzzle.global_g += 1
         sums = []
         for pos, p in enumerate(self.possibilities):
             sums.append(
                 (pos, self.calculateH(p[0]))
             )
-        print(sums)
         tuple_min = min(sums, key=operator.itemgetter(1))
-        mins = [i if (i[1] == tuple_min[1]) else None for i in sums]
-        mins.remove(None)
-        print(mins)
+        mins = []
+        for i in sums:
+            if (i[1] == tuple_min[1]):
+                mins.append(i)
+
         for i in mins:
             if Puzzle.current_min_h == None:
                 Puzzle.current_min_h = i[1]
-            elif i[1] <= Puzzle.current_min_h:
+            elif Puzzle.global_g < 4:
                 Puzzle.current_min_h = i[1]
                 element = self.possibilities[i[0]]
-                #Puzzle(element[0], element[1], element[2])
+                Puzzle(element[0], element[1], element[2])
         #self.possibilities = [Puzzle() for p in self.possibilities]
 
     def addPossibilites(self, possibiliti):
@@ -100,12 +105,10 @@ class Puzzle:
         return []
 
     def __str__(self) -> str:
-        result = ""
+        result = f"H: {self.h} G:{self.g} F:{self.f}\n"
         for i in self.data:
             result += f"{i}\n".replace("[", "|").replace("]", "|").replace(",", "").replace("0", " ")
         result += "\n"
-        for i in self.possibilities:
-            result += f"{i}"
         return result
 
 matriz_a = [
@@ -115,12 +118,12 @@ matriz_a = [
 ]
 
 matriz_b = [
-    [8, 7, 6],
-    [3, 2, 1],
-    [5, 0, 4]
+    [0, 8, 2],
+    [1, 4, 3],
+    [7, 6, 5]
 ]
 
 p = Puzzle(matriz_b, matriz_a)
-p.calculate()
-print(p)
-print(p.h)
+#p.calculate()
+#print(p)
+#print(p.h)
