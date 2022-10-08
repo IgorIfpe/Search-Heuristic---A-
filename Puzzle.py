@@ -1,14 +1,15 @@
 from copy import deepcopy
 import operator
-from os import stat
+import _thread as th
 
 class Puzzle:
 
     options = 0
     global_g = 0
     current_min_h = {}
+    puzzle_way = []
 
-    def __init__(self, data: list, expected_state: list, last_state: list = []) -> None:
+    def __init__(self, data: list, expected_state: list, last_state: list = [], is_transform: bool = True) -> None:
         self.g = Puzzle.global_g
         self.h = 0
         self.f = 0
@@ -16,8 +17,9 @@ class Puzzle:
         self.expected_state = expected_state
         self.last_state = last_state
         self.possibilities = []
-        if (self.data != self.expected_state): self.calculate()
-        else: print("Bingo")
+        self.is_transform = is_transform
+        if (self.data != self.expected_state and self.data != self.last_state): self.calculate()
+        else: print(f"Bingo\n{self}")
 
     def calculateH(self, state: list) -> int:
         h = 0
@@ -36,9 +38,9 @@ class Puzzle:
 
     def calculate(self):
         self.h = self.calculateH(self.data)
-        self.measurePossibilities()
         self.f = self.h + Puzzle.global_g
-        print(self)
+        if self.is_transform: self.measurePossibilities()
+        #print(self)
         
     def findSpace(self, spaceFinded, state: list) -> tuple:
         for x, line in enumerate(state):
@@ -61,11 +63,12 @@ class Puzzle:
         self.transformPosibilitesInPuzzles()
 
     def transformPosibilitesInPuzzles(self):
+        print(self)
         Puzzle.global_g += 1
         sums = []
         for pos, p in enumerate(self.possibilities):
             sums.append(
-                (pos, self.calculateH(p[0]) + Puzzle.global_g, f"H:{self.calculateH(p[0])}", f"G:{Puzzle.global_g}")
+                (pos, self.calculateH(p[0]) + self.global_g, f"H:{self.calculateH(p[0])}", f"G:{Puzzle.global_g}")
             )
 
         tuple_min = min(sums, key=operator.itemgetter(1))
@@ -73,15 +76,25 @@ class Puzzle:
         for i in sums:
             if (i[1] == tuple_min[1]):
                 mins.append(i)
-        print(mins)
-        for i in mins:
-            #if Puzzle.current_min_h == {}:
-            Puzzle.current_min_h[Puzzle.global_g] = i[1]
-            if Puzzle.global_g < 50:
-                Puzzle.current_min_h[Puzzle.global_g] = i[1]
-                element = self.possibilities[i[0]]
-                #Create new Puzzle
-                Puzzle(element[0], element[1], element[2])
+                
+        best_element = self.possibilities[mins[0][0]]
+        best_f_element_puzzle = Puzzle(best_element[0], best_element[1], best_element[2], False).f
+        best_pos_next_f = 0
+        
+        if Puzzle.global_g < 50:
+            if len(mins) > 1:
+                Puzzle.global_g += 1
+                for pos, i in enumerate(mins):
+                    element = self.possibilities[i[0]]
+                    p = Puzzle(element[0], element[1], element[2], False)
+                    if p.f < best_f_element_puzzle: 
+                        best_pos_next_f = pos
+                Puzzle.global_g -= 1
+
+            #Create new Puzzle
+            element = self.possibilities[mins[best_pos_next_f][0]]
+            print(element[0])
+            Puzzle(element[0], element[1], element[2])
         
     def addPossibilites(self, possibiliti):
         if (possibiliti != []):
