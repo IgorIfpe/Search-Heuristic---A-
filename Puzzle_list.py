@@ -163,6 +163,8 @@ class PuzzleView:
             self.nextPosition(state)
             sleep(1)
 
+        self.setFinish()
+
     def createPuzzleSpaces(self):
         x_ = 50
 
@@ -182,12 +184,17 @@ class PuzzleView:
         return Button(text="", font="Arial 15", width=10, height=8)
     
     def nextPosition(self, state: list):
-        print(state)
         for i in range(self.size):
             for j in range(self.size):
                 self.elements[i][j]["element"]["text"] = ""
                 if state[j][i] != 0:
                     self.elements[i][j]["element"]["text"] = state[j][i]
+
+    def setFinish(self):
+        for i in range(self.size):
+            for j in range(self.size):
+                self.elements[i][j]["element"]["bg"] = "green"
+                self.elements[i][j]["element"]["fg"] = "white"
 
 matriz_a = [
     [1, 2, 3],
